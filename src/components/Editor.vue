@@ -77,7 +77,7 @@ async function handleInput(event) {
         range.setStart(sel.anchorNode, caretPosition - length);
       }
 
-      sel.empty();
+      sel.removeAllRanges();
       sel.addRange(range);
     }
   } else if (key === "Enter") {
@@ -111,7 +111,7 @@ async function updateDataAndSelection(sel) {
   range.collapse(false);
   range.setStart(sel.anchorNode.childNodes[whichIndex], caretPosition);
 
-  sel.empty();
+  sel.removeAllRanges();
   sel.addRange(range);
 }
 
@@ -180,7 +180,6 @@ async function handleKeydown(event) {
         event.preventDefault();
       }
     }
-
     prevSel.nodeType = nodeType;
   } else if (key === "Enter") {
     if (!event.isComposing) {
@@ -208,7 +207,7 @@ async function handleKeydown(event) {
       range.collapse(false);
       range.setStartAfter(sel.anchorNode.childNodes[startOffset - 1]);
 
-      sel.empty();
+      sel.removeAllRanges();
       sel.addRange(range);
 
       event.preventDefault();
@@ -242,7 +241,7 @@ async function handlePaste() {
     startOffset + text.length
   );
 
-  sel.empty();
+  sel.removeAllRanges();
   sel.addRange(range);
 }
 
