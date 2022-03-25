@@ -1,7 +1,5 @@
-# Vue 3 + Vite
+# ASR Editor (Beta)
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+This project's purpose is build editor for Communication Access Realtime Translation person. The realtime translated data was generated from our company's training AI model and communicate our website with websocket.
 
-## Recommended IDE Setup
-
-- [VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.volar)
+Working hard to build it.😅
