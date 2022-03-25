@@ -1,5 +1,7 @@
 <script setup>
-import { ref, nextTick } from "vue";
+import { ref, nextTick, inject } from "vue";
+
+const $sanitize = inject("$sanitize");
 
 const editorRef = ref(null);
 
@@ -247,7 +249,7 @@ function getCaretCharacterOffsetWithin(selection, container) {
       leading-normal
       m-0
       inline
-      v-html="transcript"
+      v-html="$sanitize(transcript)"
     />
   </div>
 </template>
