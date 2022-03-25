@@ -252,7 +252,6 @@ function getCaretCharacterOffsetWithin(selection, container) {
     p-12px
     text-white
     @keydown="handleKeydown"
-    @input="handleInput"
     @input.prevent="handleInput"
     @keypress="handleKeypress"
   >
