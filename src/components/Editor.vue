@@ -218,6 +218,41 @@ async function handleKeydown(event) {
   }
 }
 
+async function handlePaste() {
+  const sel = document.getSelection();
+  const { startOffset } = sel.getRangeAt(0);
+  const parent = sel.anchorNode.parentElement;
+  const { whichIndex } = getNodeListIndex(sel, sel.anchorNode);
+  const segment = +parent.dataset.segment;
+  const text = await navigator.clipboard.readText();
+
+  const result = addString(sel.anchorNode.textContent, startOffset, text);
+
+  emits("updateData", {
+    segment,
+    transcript: result,
+  });
+
+  await nextTick();
+
+  const range = new Range();
+  range.collapse(false);
+  range.setStart(
+    sel.anchorNode.childNodes[whichIndex],
+    startOffset + text.length
+  );
+
+  sel.empty();
+  sel.addRange(range);
+}
+
+// add string to the index of the string
+function addString(str, index, stringToAdd) {
+  return (
+    str.substring(0, index) + stringToAdd + str.substring(index, str.length)
+  );
+}
+
 function getCaretCharacterOffsetWithin(selection, container) {
   let caretOffset = 0;
   const range = selection.getRangeAt(0);
@@ -238,6 +273,7 @@ function getCaretCharacterOffsetWithin(selection, container) {
     outline-none
     p-12px
     text-white
+    @paste.prevent="handlePaste"
     @keydown="handleKeydown"
     @input.prevent="handleInput"
     @keypress="handleKeypress"
