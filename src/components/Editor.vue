@@ -30,7 +30,7 @@ async function handleInput(event) {
     );
 
     if (nodeType === 1) {
-      //
+      console.log("backspace nodeType 1", sel);
     } else if (nodeType === 3) {
       const parent = sel.anchorNode.parentElement;
       const segment = +parent.dataset.segment;
@@ -81,51 +81,36 @@ async function handleInput(event) {
   } else if (key === "Enter") {
     // handle typing Chinese, then press enter situation, this will make Zhuyin into Chinese.
     if (event.isComposing) {
-      const parent = sel.anchorNode.parentElement;
-      const segment = +parent.dataset.segment;
-
-      const caretPosition = getCaretCharacterOffsetWithin(sel, parent);
-
-      emits("updateData", {
-        segment,
-        transcript: parent.innerHTML,
-      });
-
-      await nextTick();
-
-      const { whichIndex } = getNodeListIndex(sel, caretPosition);
-
-      const range = new Range();
-      range.collapse(false);
-      range.setStart(sel.anchorNode.childNodes[whichIndex], caretPosition);
-
-      sel.empty();
-      sel.addRange(range);
+      await updateDataAndSelection(sel);
     }
   } else {
     if (!event.isComposing) {
-      const parent = sel.anchorNode.parentElement;
-      const segment = +parent.dataset.segment;
-
-      const caretPosition = getCaretCharacterOffsetWithin(sel, parent);
-
-      emits("updateData", {
-        segment,
-        transcript: parent.innerHTML,
-      });
-
-      await nextTick();
-
-      const { whichIndex } = getNodeListIndex(sel, caretPosition);
-
-      const range = new Range();
-      range.collapse(false);
-      range.setStart(sel.anchorNode.childNodes[whichIndex], caretPosition);
-
-      sel.empty();
-      sel.addRange(range);
+      await updateDataAndSelection(sel);
     }
   }
+}
+
+async function updateDataAndSelection(sel) {
+  const parent = sel.anchorNode.parentElement;
+  const segment = +parent.dataset.segment;
+
+  const caretPosition = getCaretCharacterOffsetWithin(sel, parent);
+
+  emits("updateData", {
+    segment,
+    transcript: parent.innerHTML,
+  });
+
+  await nextTick();
+
+  const { whichIndex } = getNodeListIndex(sel, caretPosition);
+
+  const range = new Range();
+  range.collapse(false);
+  range.setStart(sel.anchorNode.childNodes[whichIndex], caretPosition);
+
+  sel.empty();
+  sel.addRange(range);
 }
 
 function getNodeListIndex(sel, caretPosition) {
