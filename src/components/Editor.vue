@@ -92,29 +92,6 @@ async function handleInput(event) {
   }
 }
 
-async function updateDataAndSelection(sel) {
-  const parent = sel.anchorNode.parentElement;
-  const segment = +parent.dataset.segment;
-
-  const caretPosition = getCaretCharacterOffsetWithin(sel, parent);
-
-  emits("updateData", {
-    segment,
-    transcript: parent.innerHTML,
-  });
-
-  await nextTick();
-
-  const { whichIndex } = getNodeListIndex(sel, caretPosition);
-
-  const range = new Range();
-  range.collapse(false);
-  range.setStart(sel.anchorNode.childNodes[whichIndex], caretPosition);
-
-  sel.removeAllRanges();
-  sel.addRange(range);
-}
-
 function getNodeListIndex(sel, caretPosition) {
   let whichIndex = 0;
   let length = 0;
@@ -133,19 +110,12 @@ function getNodeListIndex(sel, caretPosition) {
   return { whichIndex, length };
 }
 
-let prevSel = {};
 async function handleKeydown(event) {
   const sel = document.getSelection();
   const selRange = sel.getRangeAt(0);
   const nodeType = sel.anchorNode.nodeType;
-  // const ctrlDown = event.ctrlKey || event.metaKey;
 
   key = event.key;
-
-  // if (ctrlDown && key === "x") {
-  //   console.log(selRange);
-  //   event.preventDefault();
-  // }
 
   if (key === "Backspace") {
     console.log("Backspace", sel, selRange, nodeType);
@@ -180,7 +150,6 @@ async function handleKeydown(event) {
         event.preventDefault();
       }
     }
-    prevSel.nodeType = nodeType;
   } else if (key === "Enter") {
     if (!event.isComposing) {
       const br = document.createElement("br");
@@ -214,6 +183,113 @@ async function handleKeydown(event) {
     }
   } else if (key === "Delete") {
     //
+  }
+}
+
+async function updateDataAndSelection(sel) {
+  const parent = sel.anchorNode.parentElement;
+  const segment = +parent.dataset.segment;
+
+  const caretPosition = getCaretCharacterOffsetWithin(sel, parent);
+
+  emits("updateData", {
+    segment,
+    transcript: parent.innerHTML,
+  });
+
+  await nextTick();
+
+  const { whichIndex } = getNodeListIndex(sel, caretPosition);
+
+  const range = new Range();
+  range.collapse(false);
+  range.setStart(sel.anchorNode.childNodes[whichIndex], caretPosition);
+
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+async function handleCut() {
+  const sel = document.getSelection();
+  const selRange = sel.getRangeAt(0);
+
+  if (sel.anchorNode === sel.focusNode) {
+    const parent = sel.anchorNode.parentElement;
+    const segment = +parent.dataset.segment;
+
+    const { startOffset } = selRange;
+
+    emits("updateData", {
+      segment,
+      transcript: parent.innerHTML,
+    });
+
+    await nextTick();
+
+    const range = new Range();
+    range.collapse(false);
+    range.setStart(sel.anchorNode, startOffset);
+
+    sel.removeAllRanges();
+    sel.addRange(range);
+  } else {
+    let replaceHTML = [];
+    let start = null;
+    for (const e of selRange.commonAncestorContainer.childNodes.entries()) {
+      if (e[1] === selRange.startContainer.parentElement) {
+        start = +selRange.startContainer.parentElement.dataset.segment;
+
+        const transcript = selRange.startContainer.textContent.substring(
+          0,
+          selRange.startOffset
+        );
+
+        replaceHTML.push({
+          segment: start,
+          transcript,
+        });
+      } else if (e[1] === selRange.endContainer.parentElement) {
+        const transcript = selRange.endContainer.textContent.substring(
+          selRange.endOffset,
+          selRange.endContainer.textContent.length
+        );
+
+        console.log("e", transcript);
+
+        replaceHTML.push({
+          segment: +selRange.endContainer.parentElement.dataset.segment,
+          transcript,
+        });
+
+        break;
+      } else if (start !== null) {
+        replaceHTML.push({
+          segment: ++start,
+          transcript: "",
+        });
+      }
+    }
+
+    for (let i = 0; i < replaceHTML.length; i++) {
+      const { segment, transcript } = replaceHTML[i];
+
+      emits("updateData", {
+        segment,
+        transcript,
+      });
+
+      await nextTick();
+    }
+
+    const range = new Range();
+    range.collapse(false);
+    range.setStart(
+      sel.anchorNode.childNodes[0],
+      replaceHTML[0].transcript.length
+    );
+
+    sel.removeAllRanges();
+    sel.addRange(range);
   }
 }
 
@@ -273,6 +349,7 @@ function getCaretCharacterOffsetWithin(selection, container) {
     p-12px
     text-white
     @paste.prevent="handlePaste"
+    @cut.prevent="handleCut"
     @keydown="handleKeydown"
     @input.prevent="handleInput"
     @keypress="handleKeypress"
