@@ -15,12 +15,13 @@ defineProps({
 
 const emits = defineEmits(["updateData"]);
 
-async function handleInput() {
+async function handleInput(event) {
   const sel = document.getSelection();
   const selRange = sel.getRangeAt(0);
   const nodeType = sel.anchorNode.nodeType;
 
   if (key === "Backspace") {
+    console.log(nodeType);
     console.log("Backspace input", sel, selRange);
 
     const caretPosition = getCaretCharacterOffsetWithin(
@@ -77,27 +78,53 @@ async function handleInput() {
       sel.empty();
       sel.addRange(range);
     }
+  } else if (key === "Enter") {
+    // handle typing Chinese, then press enter situation, this will make Zhuyin into Chinese.
+    if (event.isComposing) {
+      const parent = sel.anchorNode.parentElement;
+      const segment = +parent.dataset.segment;
+
+      const caretPosition = getCaretCharacterOffsetWithin(sel, parent);
+
+      emits("updateData", {
+        segment,
+        transcript: parent.innerHTML,
+      });
+
+      await nextTick();
+
+      const { whichIndex } = getNodeListIndex(sel, caretPosition);
+
+      const range = new Range();
+      range.collapse(false);
+      range.setStart(sel.anchorNode.childNodes[whichIndex], caretPosition);
+
+      sel.empty();
+      sel.addRange(range);
+    }
   } else {
-    const parent = sel.anchorNode.parentElement;
-    const segment = +parent.dataset.segment;
+    if (!event.isComposing) {
+      const parent = sel.anchorNode.parentElement;
+      const segment = +parent.dataset.segment;
 
-    const caretPosition = getCaretCharacterOffsetWithin(sel, parent);
+      const caretPosition = getCaretCharacterOffsetWithin(sel, parent);
 
-    emits("updateData", {
-      segment,
-      transcript: parent.innerHTML,
-    });
+      emits("updateData", {
+        segment,
+        transcript: parent.innerHTML,
+      });
 
-    await nextTick();
+      await nextTick();
 
-    const { whichIndex } = getNodeListIndex(sel, caretPosition);
+      const { whichIndex } = getNodeListIndex(sel, caretPosition);
 
-    const range = new Range();
-    range.collapse(false);
-    range.setStart(sel.anchorNode.childNodes[whichIndex], caretPosition);
+      const range = new Range();
+      range.collapse(false);
+      range.setStart(sel.anchorNode.childNodes[whichIndex], caretPosition);
 
-    sel.empty();
-    sel.addRange(range);
+      sel.empty();
+      sel.addRange(range);
+    }
   }
 }
 
@@ -226,6 +253,7 @@ function getCaretCharacterOffsetWithin(selection, container) {
     text-white
     @keydown="handleKeydown"
     @input="handleInput"
+    @input.prevent="handleInput"
     @keypress="handleKeypress"
   >
     <p
