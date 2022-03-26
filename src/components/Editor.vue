@@ -209,19 +209,64 @@ async function updateDataAndSelection(sel) {
   sel.addRange(range);
 }
 
+// TODO: still need to fix bug
 async function handleCut() {
   const sel = document.getSelection();
   const selRange = sel.getRangeAt(0);
 
-  if (sel.anchorNode === sel.focusNode) {
-    const parent = sel.anchorNode.parentElement;
+  console.log(selRange.startContainer, selRange.endContainer);
+  console.log(selRange);
+
+  if (selRange.startContainer === selRange.endContainer) {
+    // handle cutting same line and same container situation ex: "hello" -> "heo"
+    const parent = selRange.commonAncestorContainer.parentElement;
     const segment = +parent.dataset.segment;
+
+    const { startOffset, endOffset } = selRange;
+
+    const transcript = removeString(parent.innerHTML, startOffset, endOffset);
+
+    emits("updateData", {
+      segment,
+      transcript,
+    });
+
+    await nextTick();
+
+    const range = new Range();
+    range.collapse(false);
+    range.setStart(sel.anchorNode.childNodes[0], startOffset);
+
+    sel.removeAllRanges();
+    sel.addRange(range);
+  } else if (
+    selRange.startContainer.parentElement ===
+    selRange.endContainer.parentElement
+  ) {
+    // handle cutting same container but different line ex: [text, br, text] -> [text]
+    let replaceHTML = "";
+    for (const e of selRange.commonAncestorContainer.childNodes.entries()) {
+      if (e[1] === selRange.startContainer) {
+        replaceHTML += e[1].data.substring(0, selRange.startOffset);
+      } else if (e[1] === selRange.endContainer) {
+        replaceHTML += e[1].data.substring(
+          selRange.endOffset,
+          selRange.endContainer.length
+        );
+      } else {
+        if (e[1].nodeType === 1) {
+          replaceHTML += e[1].outerHTML;
+        } else if (e[1].nodeType === 3) {
+          replaceHTML += e[1].data;
+        }
+      }
+    }
 
     const { startOffset } = selRange;
 
     emits("updateData", {
-      segment,
-      transcript: parent.innerHTML,
+      segment: +selRange.commonAncestorContainer.dataset.segment,
+      transcript: replaceHTML,
     });
 
     await nextTick();
@@ -233,7 +278,7 @@ async function handleCut() {
     sel.removeAllRanges();
     sel.addRange(range);
   } else {
-    let replaceHTML = [];
+    const replaceHTML = [];
     let start = null;
     for (const e of selRange.commonAncestorContainer.childNodes.entries()) {
       if (e[1] === selRange.startContainer.parentElement) {
@@ -253,8 +298,6 @@ async function handleCut() {
           selRange.endOffset,
           selRange.endContainer.textContent.length
         );
-
-        console.log("e", transcript);
 
         replaceHTML.push({
           segment: +selRange.endContainer.parentElement.dataset.segment,
@@ -319,6 +362,10 @@ async function handlePaste() {
 
   sel.removeAllRanges();
   sel.addRange(range);
+}
+
+function removeString(str, startOffset, endOffset) {
+  return str.slice(0, startOffset) + str.slice(endOffset, str.length);
 }
 
 // add string to the index of the string
