@@ -210,6 +210,9 @@ async function updateDataAndSelection(sel) {
 }
 
 async function handleCut() {
+  // using copy instead cut to mimic cutting behavior
+  document.execCommand("copy");
+
   const sel = document.getSelection();
   const selRange = sel.getRangeAt(0);
 
