@@ -152,6 +152,57 @@ async function handleKeydown(event) {
         await nextTick();
 
         event.preventDefault();
+      } else if (selRange.commonAncestorContainer.childNodes.length !== 0) {
+        // handle multiple delete <br>
+        if (
+          selRange.commonAncestorContainer.childNodes[selRange.startOffset - 1]
+            .nodeName === "BR"
+        ) {
+          const { startOffset, startContainer } = selRange;
+
+          selRange.selectNode(
+            selRange.commonAncestorContainer.childNodes[
+              selRange.startOffset - 1
+            ]
+          );
+          selRange.deleteContents();
+
+          const offset =
+            startContainer.childNodes[startOffset - 2]?.textContent.length;
+
+          const parent = sel.anchorNode;
+
+          emits("updateData", {
+            segment: +parent.dataset.segment,
+            transcript: parent.innerHTML,
+          });
+
+          await nextTick();
+
+          const range = new Range();
+          range.collapse(false);
+
+          console.log(offset);
+
+          if (sel.anchorNode.childNodes.length === 1) {
+            // delete <br> startOffset need to minus 1
+            range.setStart(sel.anchorNode.childNodes[0], offset);
+          } else {
+            const node = sel.anchorNode.childNodes[startOffset - 1];
+            if (node) {
+              if (node.nodeName === "BR") {
+                range.setStartAfter(node);
+              } else {
+                range.setStart(node, 0);
+              }
+            }
+          }
+
+          sel.removeAllRanges();
+          sel.addRange(range);
+
+          event.preventDefault();
+        }
       }
     } else if (nodeType === 3) {
       // handle deleting first character of text node
@@ -197,7 +248,12 @@ async function handleKeydown(event) {
 
       const range = new Range();
       range.collapse(false);
-      range.setStartAfter(sel.anchorNode.childNodes[startOffset - 1]);
+
+      if (sel.anchorNode.childNodes[startOffset - 1].nodeName === "BR") {
+        range.setStartAfter(sel.anchorNode.childNodes[startOffset - 1]);
+      } else {
+        range.setStart(sel.anchorNode.childNodes[startOffset - 1], 0);
+      }
 
       sel.removeAllRanges();
       sel.addRange(range);
