@@ -172,6 +172,10 @@ async function handleKeydown(event) {
   } else if (key === "Enter") {
     if (!event.isComposing) {
       const br = document.createElement("br");
+
+      // fix "<br><br /></br>" situation
+      if (selRange.commonAncestorContainer.nodeName === "BR") return;
+
       selRange.insertNode(br);
       selRange.setStartAfter(br);
       selRange.collapse(false);
