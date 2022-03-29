@@ -19,225 +19,88 @@ const emits = defineEmits(["updateData"]);
 
 async function handleInput(event) {
   const sel = document.getSelection();
-  const selRange = sel.getRangeAt(0);
-  const nodeType = sel.anchorNode.nodeType;
+  const range = sel.getRangeAt(0);
 
-  if (key === "Backspace") {
-    console.log(nodeType);
-    console.log("Backspace input", sel, selRange);
-
-    const caretPosition = getCaretCharacterOffsetWithin(
-      sel,
-      sel.anchorNode.parentElement
-    );
-
-    if (nodeType === 1) {
-      console.log("backspace nodeType 1", sel);
-    } else if (nodeType === 3) {
-      const parent = sel.anchorNode.parentElement;
-      const segment = +parent.dataset.segment;
-
-      emits("updateData", {
-        segment,
-        transcript: parent.innerHTML,
-      });
-
-      await nextTick();
-
-      const range = new Range();
-      range.collapse(false);
-
-      const { whichIndex, length } = getNodeListIndex(sel, caretPosition);
-
-      console.log(sel.anchorNode.childNodes, whichIndex);
-      if (sel.anchorNode.childNodes.length !== 0) {
-        if (sel.anchorNode.childNodes[whichIndex].length === caretPosition) {
-          // calculate [text, br, br, text] -> [text, br, text] situation
-          let brNodeIndex = whichIndex;
-          for (
-            let i = whichIndex + 1;
-            i < sel.anchorNode.childNodes.length;
-            i++
-          ) {
-            if (sel.anchorNode.childNodes[i].nodeName === "BR") {
-              brNodeIndex = i;
-            } else {
-              break;
-            }
-          }
-
-          range.setStartAfter(sel.anchorNode.childNodes[brNodeIndex]);
-        } else {
-          if (sel.anchorNode.childNodes[whichIndex + 1]) {
-            if (sel.anchorNode.childNodes[whichIndex + 1].nodeName === "BR") {
-              let brNodeIndex = whichIndex;
-              for (
-                let i = whichIndex + 1;
-                i < sel.anchorNode.childNodes.length;
-                i++
-              ) {
-                if (sel.anchorNode.childNodes[i].nodeName === "BR") {
-                  brNodeIndex = i;
-                } else {
-                  break;
-                }
-              }
-
-              range.setStartAfter(sel.anchorNode.childNodes[brNodeIndex]);
-            }
-          } else {
-            range.setStart(
-              sel.anchorNode.childNodes[whichIndex],
-              caretPosition - length
-            );
-          }
-        }
-      } else {
-        range.setStart(sel.anchorNode, caretPosition - length);
-      }
-
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
-  } else if (key === "Enter") {
-    // handle typing Chinese, then press enter situation, this will make Zhuyin into Chinese.
+  if (key === "Enter") {
     if (event.isComposing) {
-      await updateDataAndSelection(sel);
+      await addStringToTextNode(sel, range);
     }
   } else {
     if (!event.isComposing) {
-      await updateDataAndSelection(sel);
+      await addStringToTextNode(sel, range);
     }
   }
 }
 
-function getNodeListIndex(sel, caretPosition) {
-  let whichIndex = 0;
-  let length = 0;
+async function addStringToTextNode(sel, range) {
+  const { startContainer, startOffset } = range;
 
-  for (let e of sel.anchorNode.childNodes.entries()) {
-    if (e[1].data) {
-      if (length + e[1].data.length < caretPosition) {
-        length += e[1].data.length;
-      } else {
-        whichIndex = e[0];
+  const parent = startContainer.parentElement;
+  const segment = +parent.dataset.segment;
+
+  if (isNaN(segment)) return;
+
+  emits("updateData", {
+    segment: +parent.dataset.segment,
+    transcript: startContainer.data,
+  });
+
+  await nextTick();
+
+  const r = new Range();
+  r.collapse(false);
+
+  const { index } = findNodeIndex(sel, startOffset);
+
+  r.setStart(sel.anchorNode.childNodes[index], startOffset);
+
+  sel.removeAllRanges();
+  sel.addRange(r);
+}
+
+function findNodeIndex(sel, startOffset) {
+  let index = 0;
+  let length = 0;
+  for (const e of sel.anchorNode.childNodes.entries()) {
+    if (e[1].nodeName === "#text") {
+      if (e[1].data.length + length >= startOffset) {
+        index = e[0];
         break;
+      } else {
+        length += e[1].data.length;
       }
+    } else if (e[1].nodeName === "BR") {
+      length += 1;
     }
   }
 
-  return { whichIndex, length };
+  return { index, length };
 }
 
 async function handleKeydown(event) {
   const sel = document.getSelection();
-  const selRange = sel.getRangeAt(0);
-  const nodeType = sel.anchorNode.nodeType;
+  const range = sel.getRangeAt(0);
 
   key = event.key;
 
-  if (key === "Backspace") {
-    console.log("Backspace", sel, selRange, nodeType);
-
-    if (nodeType === 1) {
-      const content = sel.anchorNode.innerHTML;
-
-      // handle last word situation "w" -> "" || "&nbsp;" -> ""
-      if (content.length === 1 || content === "&nbsp;") {
-        emits("updateData", {
-          segment: +sel.anchorNode.dataset.segment,
-          transcript: "",
-        });
-
-        await nextTick();
-
-        event.preventDefault();
-      } else if (selRange.commonAncestorContainer.childNodes.length !== 0) {
-        // handle multiple delete <br>
-        if (
-          selRange.commonAncestorContainer.childNodes[selRange.startOffset - 1]
-            .nodeName === "BR"
-        ) {
-          const { startOffset, startContainer } = selRange;
-
-          selRange.selectNode(
-            selRange.commonAncestorContainer.childNodes[
-              selRange.startOffset - 1
-            ]
-          );
-          selRange.deleteContents();
-
-          const offset =
-            startContainer.childNodes[startOffset - 2]?.textContent.length;
-
-          const parent = sel.anchorNode;
-
-          emits("updateData", {
-            segment: +parent.dataset.segment,
-            transcript: parent.innerHTML,
-          });
-
-          await nextTick();
-
-          const range = new Range();
-          range.collapse(false);
-
-          console.log(offset);
-
-          if (sel.anchorNode.childNodes.length === 1) {
-            // delete <br> startOffset need to minus 1
-            range.setStart(sel.anchorNode.childNodes[0], offset);
-          } else {
-            const node = sel.anchorNode.childNodes[startOffset - 1];
-            if (node) {
-              if (node.nodeName === "BR") {
-                range.setStartAfter(node);
-              } else {
-                range.setStart(node, 0);
-              }
-            }
-          }
-
-          sel.removeAllRanges();
-          sel.addRange(range);
-
-          event.preventDefault();
-        }
-      }
-    } else if (nodeType === 3) {
-      // handle deleting first character of text node
-      if (selRange.startOffset === 1) {
-        const parentEl = sel.anchorNode.parentElement;
-        const segment = +parentEl.dataset.segment;
-
-        emits("updateData", {
-          segment,
-          transcript: parentEl.innerHTML.substring(1),
-        });
-
-        await nextTick();
-
-        event.preventDefault();
-      }
-    }
-  } else if (key === "Enter") {
+  if (key === "Enter") {
     if (!event.isComposing) {
       const br = document.createElement("br");
 
       // fix "<br><br /></br>" situation
-      if (selRange.commonAncestorContainer.nodeName === "BR") return;
+      if (range.commonAncestorContainer.nodeName === "BR") return;
 
-      selRange.insertNode(br);
-      selRange.setStartAfter(br);
-      selRange.collapse(false);
+      range.insertNode(br);
+      range.setStartAfter(br);
+      range.collapse(false);
 
       sel.removeAllRanges();
-      sel.addRange(selRange);
+      sel.addRange(range);
 
       const segment = +sel.anchorNode.dataset.segment;
 
       // extract value before nextTIck to prevent mutation
-      const { startOffset } = selRange;
+      const { startOffset } = range;
 
       emits("updateData", {
         segment,
@@ -246,259 +109,176 @@ async function handleKeydown(event) {
 
       await nextTick();
 
-      const range = new Range();
-      range.collapse(false);
+      const r = new Range();
+      r.collapse(false);
 
       if (sel.anchorNode.childNodes[startOffset - 1].nodeName === "BR") {
-        range.setStartAfter(sel.anchorNode.childNodes[startOffset - 1]);
+        r.setStartAfter(sel.anchorNode.childNodes[startOffset - 1]);
       } else {
-        range.setStart(sel.anchorNode.childNodes[startOffset - 1], 0);
+        r.setStart(sel.anchorNode.childNodes[startOffset - 1], 0);
       }
 
       sel.removeAllRanges();
-      sel.addRange(range);
+      sel.addRange(r);
 
       event.preventDefault();
     }
-  } else if (key === "Delete") {
-    //
+  } else if (key === "Backspace") {
+    if (event.isComposing) return;
+
+    const { commonAncestorContainer, startOffset } = range;
+
+    const nodeName = commonAncestorContainer.nodeName;
+
+    const r = new Range();
+    r.collapse(false);
+
+    if (nodeName === "P") {
+      console.log("P");
+      if (
+        commonAncestorContainer.childNodes[startOffset - 1]?.nodeName === "BR"
+      ) {
+        commonAncestorContainer.childNodes[startOffset - 1].remove();
+
+        let offset = 0;
+        let br = false;
+        if (
+          commonAncestorContainer.childNodes[startOffset - 2].nodeName ===
+          "#text"
+        ) {
+          offset = commonAncestorContainer.childNodes[startOffset - 2].length;
+        } else {
+          br = true;
+        }
+
+        emits("updateData", {
+          segment: +commonAncestorContainer.dataset.segment,
+          transcript: commonAncestorContainer.innerHTML,
+        });
+
+        await nextTick();
+
+        if (br) {
+          r.setStartAfter(sel.anchorNode.childNodes[startOffset - 2]);
+        } else {
+          r.setStart(sel.anchorNode.childNodes[startOffset - 2], offset);
+        }
+
+        sel.removeAllRanges();
+        sel.addRange(r);
+
+        event.preventDefault();
+      }
+    } else if (nodeName === "#text") {
+      console.log(startOffset);
+      const parent = commonAncestorContainer.parentElement;
+
+      if (parent.childNodes.length === 1) {
+        if (startOffset === 1) {
+          emits("updateData", {
+            segment: +parent.dataset.segment,
+            transcript: "",
+          });
+
+          await nextTick();
+        } else {
+          const transcript = removeString(
+            commonAncestorContainer.data,
+            startOffset
+          );
+
+          emits("updateData", {
+            segment: +parent.dataset.segment,
+            transcript,
+          });
+
+          await nextTick();
+
+          r.setStart(sel.anchorNode.childNodes[0], startOffset - 1);
+
+          sel.removeAllRanges();
+          sel.addRange(r);
+        }
+
+        event.preventDefault();
+      } else {
+        console.log(parent);
+        console.log(startOffset);
+
+        let transcripts = [];
+        let index = 0;
+        for (const e of parent.childNodes.entries()) {
+          if (e[1] === commonAncestorContainer) {
+            // remove <br>
+            if (startOffset === 0) transcripts.pop();
+
+            transcripts.push(removeString(e[1].data, startOffset));
+            index = e[0];
+          } else {
+            if (e[1].data) {
+              transcripts.push(e[1].data);
+            } else {
+              transcripts.push(e[1].outerHTML);
+            }
+          }
+        }
+
+        let length = transcripts[index - 2].length;
+
+        emits("updateData", {
+          segment: +parent.dataset.segment,
+          transcript: transcripts.join(""),
+        });
+
+        await nextTick();
+
+        if (startOffset === 0) {
+          if (sel.anchorNode.childNodes[index - 2].nodeName === "BR") {
+            r.setStartAfter(sel.anchorNode.childNodes[index - 2]);
+          } else {
+            r.setStart(sel.anchorNode.childNodes[index - 2], length);
+          }
+        } else {
+          r.setStart(sel.anchorNode.childNodes[index], startOffset - 1);
+        }
+
+        sel.removeAllRanges();
+        sel.addRange(r);
+
+        event.preventDefault();
+      }
+    }
   }
-}
-
-async function updateDataAndSelection(sel) {
-  const parent = sel.anchorNode.parentElement;
-  const segment = +parent.dataset.segment;
-
-  const caretPosition = getCaretCharacterOffsetWithin(sel, parent);
-
-  emits("updateData", {
-    segment,
-    transcript: parent.innerHTML,
-  });
-
-  await nextTick();
-
-  const { whichIndex } = getNodeListIndex(sel, caretPosition);
-
-  const range = new Range();
-  range.collapse(false);
-  range.setStart(sel.anchorNode.childNodes[whichIndex], caretPosition);
-
-  sel.removeAllRanges();
-  sel.addRange(range);
 }
 
 async function handleCut() {
-  // using copy instead cut to mimic cutting behavior
   document.execCommand("copy");
-
-  const sel = document.getSelection();
-  const selRange = sel.getRangeAt(0);
-
-  if (selRange.startContainer === selRange.endContainer) {
-    // handle cutting same line and same container situation ex: "hello" -> "heo"
-    const { startOffset, endOffset, startContainer, commonAncestorContainer } =
-      selRange;
-    const parent = commonAncestorContainer.parentElement;
-    const segment = +parent.dataset.segment;
-
-    let transcript = "";
-    let index = 0;
-    if (parent.childNodes.length === 1) {
-      // because is same line and same container, just remove string
-      transcript = removeString(parent.innerHTML, startOffset, endOffset);
-    } else {
-      // this situation is the same container but different line, so have to calculate the length of each node
-      // ex: "呵<br>呵呵<br>你好嗎" -> "呵<br><br>你好嗎"
-      for (const e of parent.childNodes.entries()) {
-        if (e[1] === startContainer) {
-          index = e[0];
-          // handle "呵<br>呵呵<br>你好嗎" -> "呵<br>呵<br>你好嗎" need to calculate words
-          if (startOffset + endOffset > e[1].length) {
-            // the total has bigger then the node length, so just calculate the index 0 to startOffset
-            transcript += e[1].data.substring(0, startOffset);
-          } else {
-            transcript += removeString(e[1].data, startOffset, endOffset);
-          }
-        } else {
-          if (e[1].data) {
-            transcript += e[1].data;
-          } else if (e[1].outerHTML) {
-            transcript += e[1].outerHTML;
-          }
-        }
-      }
-    }
-
-    emits("updateData", {
-      segment,
-      transcript,
-    });
-
-    await nextTick();
-
-    const range = new Range();
-    range.collapse(false);
-
-    if (parent.childNodes.length === 1) {
-      range.setStart(sel.anchorNode.childNodes[0], startOffset);
-    } else {
-      range.setStart(sel.anchorNode.childNodes[index], startOffset);
-    }
-
-    sel.removeAllRanges();
-    sel.addRange(range);
-  } else if (
-    selRange.startContainer.parentElement ===
-    selRange.endContainer.parentElement
-  ) {
-    // handle cutting same container but different line ex: [text, br, text] -> [text]
-    let replaceHTML = "";
-    let between = false;
-    let index = 0;
-    for (const e of selRange.commonAncestorContainer.childNodes.entries()) {
-      if (e[1] === selRange.startContainer) {
-        between = true;
-        index = e[0];
-        replaceHTML += e[1].data.substring(0, selRange.startOffset);
-      } else if (e[1] === selRange.endContainer) {
-        between = false;
-        replaceHTML += e[1].data.substring(
-          selRange.endOffset,
-          selRange.endContainer.length
-        );
-      } else if (!between) {
-        // if between the startContainer and endContainer, the node will be removed, otherwise just append the node
-        if (e[1].nodeType === 1) {
-          replaceHTML += e[1].outerHTML;
-        } else if (e[1].nodeType === 3) {
-          replaceHTML += e[1].data;
-        }
-      }
-    }
-
-    const { startOffset } = selRange;
-
-    emits("updateData", {
-      segment: +selRange.commonAncestorContainer.dataset.segment,
-      transcript: replaceHTML,
-    });
-
-    await nextTick();
-
-    const range = new Range();
-    range.collapse(false);
-    range.setStart(sel.anchorNode.childNodes[index], startOffset);
-
-    sel.removeAllRanges();
-    sel.addRange(range);
-  } else {
-    const replaceHTML = [];
-    let start = null;
-    for (const e of selRange.commonAncestorContainer.childNodes.entries()) {
-      if (e[1] === selRange.startContainer.parentElement) {
-        start = +selRange.startContainer.parentElement.dataset.segment;
-
-        const transcript = selRange.startContainer.textContent.substring(
-          0,
-          selRange.startOffset
-        );
-
-        replaceHTML.push({
-          segment: start,
-          transcript,
-        });
-      } else if (e[1] === selRange.endContainer.parentElement) {
-        const transcript = selRange.endContainer.textContent.substring(
-          selRange.endOffset,
-          selRange.endContainer.textContent.length
-        );
-
-        replaceHTML.push({
-          segment: +selRange.endContainer.parentElement.dataset.segment,
-          transcript,
-        });
-
-        break;
-      } else if (start !== null) {
-        replaceHTML.push({
-          segment: ++start,
-          transcript: "",
-        });
-      }
-    }
-
-    for (let i = 0; i < replaceHTML.length; i++) {
-      const { segment, transcript } = replaceHTML[i];
-
-      emits("updateData", {
-        segment,
-        transcript,
-      });
-
-      await nextTick();
-    }
-
-    const range = new Range();
-    range.collapse(false);
-    range.setStart(
-      sel.anchorNode.childNodes[0],
-      replaceHTML[0].transcript.length
-    );
-
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }
 }
 
 async function handlePaste() {
+  //
+}
+
+async function handleCompositionend() {
   const sel = document.getSelection();
-  const { startOffset } = sel.getRangeAt(0);
-  const parent = sel.anchorNode.parentElement;
-  const { whichIndex } = getNodeListIndex(sel, sel.anchorNode);
-  const segment = +parent.dataset.segment;
-  const text = await navigator.clipboard.readText();
+  const range = sel.getRangeAt(0);
 
-  const result = addString(sel.anchorNode.textContent, startOffset, text);
-
-  emits("updateData", {
-    segment,
-    transcript: result,
-  });
-
-  await nextTick();
-
-  const range = new Range();
-  range.collapse(false);
-  range.setStart(
-    sel.anchorNode.childNodes[whichIndex],
-    startOffset + text.length
-  );
+  await addStringToTextNode(sel, range);
 
   sel.removeAllRanges();
-  sel.addRange(range);
 }
 
-function removeString(str, startOffset, endOffset) {
-  return str.substring(0, startOffset) + str.substring(endOffset, str.length);
+function removeString(str, startOffset) {
+  if (startOffset === 0) return str;
+  return str.slice(0, startOffset - 1) + str.slice(startOffset, str.length);
 }
 
-// add string to the index of the string
-function addString(str, index, stringToAdd) {
+function addString(str, startOffset, addText) {
   return (
-    str.substring(0, index) + stringToAdd + str.substring(index, str.length)
+    str.substring(0, startOffset) +
+    addText +
+    str.substring(startOffset, str.length)
   );
-}
-
-function getCaretCharacterOffsetWithin(selection, container) {
-  let caretOffset = 0;
-  const range = selection.getRangeAt(0);
-  const preCaretRange = range.cloneRange();
-  preCaretRange.selectNodeContents(container);
-  preCaretRange.setEnd(range.endContainer, range.endOffset);
-  caretOffset = preCaretRange.toString().length;
-
-  return caretOffset;
 }
 </script>
 
@@ -512,9 +292,9 @@ function getCaretCharacterOffsetWithin(selection, container) {
     text-white
     @paste.prevent="handlePaste"
     @cut.prevent="handleCut"
+    @compositionend="handleCompositionend"
     @keydown="handleKeydown"
     @input.prevent="handleInput"
-    @keypress="handleKeypress"
   >
     <p
       v-for="{ segment, transcript } in data"
