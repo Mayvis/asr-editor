@@ -68,10 +68,29 @@ async function handleInput(event) {
 
           range.setStartAfter(sel.anchorNode.childNodes[brNodeIndex]);
         } else {
-          range.setStart(
-            sel.anchorNode.childNodes[whichIndex],
-            caretPosition - length
-          );
+          if (sel.anchorNode.childNodes[whichIndex + 1]) {
+            if (sel.anchorNode.childNodes[whichIndex + 1].nodeName === "BR") {
+              let brNodeIndex = whichIndex;
+              for (
+                let i = whichIndex + 1;
+                i < sel.anchorNode.childNodes.length;
+                i++
+              ) {
+                if (sel.anchorNode.childNodes[i].nodeName === "BR") {
+                  brNodeIndex = i;
+                } else {
+                  break;
+                }
+              }
+
+              range.setStartAfter(sel.anchorNode.childNodes[brNodeIndex]);
+            }
+          } else {
+            range.setStart(
+              sel.anchorNode.childNodes[whichIndex],
+              caretPosition - length
+            );
+          }
         }
       } else {
         range.setStart(sel.anchorNode, caretPosition - length);
