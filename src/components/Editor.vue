@@ -436,24 +436,83 @@ async function handleCut() {
 
 async function handlePaste() {
   const sel = document.getSelection();
-  const { startOffset } = sel.getRangeAt(0);
-  const parent = sel.anchorNode.parentElement;
-  const { index } = findNodeIndex(sel, startOffset);
-  const segment = +parent.dataset.segment;
+  const range = sel.getRangeAt(0);
+  const { startOffset, startContainer } = range;
   const text = await navigator.clipboard.readText();
-
-  const result = addString(sel.anchorNode.textContent, startOffset, text);
-
-  emits("updateData", {
-    segment,
-    transcript: result,
-  });
-
-  await nextTick();
+  const nodeName = sel.anchorNode.nodeName;
 
   const r = new Range();
   r.collapse(false);
-  r.setStart(sel.anchorNode.childNodes[index], startOffset + text.length);
+
+  if (nodeName === "#text") {
+    const parent = sel.anchorNode.parentElement;
+    const segment = +parent.dataset.segment;
+
+    // single line situation
+    if (parent.childNodes.length === 1) {
+      const { index } = findNodeIndex(sel, startOffset);
+
+      const result = addString(sel.anchorNode.data, startOffset, text);
+
+      emits("updateData", {
+        segment,
+        transcript: result,
+      });
+
+      await nextTick();
+
+      r.setStart(sel.anchorNode.childNodes[index], startOffset + text.length);
+    } else {
+      let transcripts = "";
+      let index = 0;
+      for (const e of parent.childNodes.entries()) {
+        if (e[1] === startContainer) {
+          index = e[0];
+          transcripts += addString(e[1].data, startOffset, text);
+        } else {
+          if (e[1].data) {
+            transcripts += e[1].data;
+          } else if (e[1].outerHTML) {
+            transcripts += e[1].outerHTML;
+          }
+        }
+      }
+
+      emits("updateData", {
+        segment,
+        transcript: transcripts,
+      });
+
+      await nextTick();
+
+      r.setStart(sel.anchorNode.childNodes[index], startOffset + text.length);
+    }
+  } else if (nodeName === "P") {
+    console.log(sel.anchorNode.childNodes[startOffset]?.nodeName);
+    if (sel.anchorNode.childNodes[startOffset]?.nodeName === "BR") {
+      const newNode = document.createTextNode(text);
+      range.insertNode(newNode);
+      range.setStartAfter(newNode);
+      range.collapse(false);
+
+      sel.removeAllRanges();
+      sel.addRange(range);
+
+      const segment = +sel.anchorNode.dataset.segment;
+
+      emits("updateData", {
+        segment,
+        transcript: sel.anchorNode.innerHTML,
+      });
+
+      await nextTick();
+
+      r.setStart(sel.anchorNode.childNodes[startOffset], text.length);
+
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }
+  }
 
   sel.removeAllRanges();
   sel.addRange(r);
