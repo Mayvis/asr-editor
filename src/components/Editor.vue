@@ -132,7 +132,7 @@ async function handleKeydown(event) {
   } else if (key === "Backspace") {
     if (event.isComposing) return;
 
-    const { commonAncestorContainer, startOffset } = range;
+    const { commonAncestorContainer, startOffset, endOffset } = range;
 
     const nodeName = commonAncestorContainer.nodeName;
 
@@ -194,14 +194,16 @@ async function handleKeydown(event) {
           emits("updateData", {
             segment: +parent.dataset.segment,
             transcript:
-              "&nbsp;" + removeString(sel.anchorNode.data, startOffset),
+              "&nbsp;" +
+              removeString(sel.anchorNode.data, startOffset, endOffset),
           });
 
           await nextTick();
         } else {
           const transcript = removeString(
             commonAncestorContainer.data,
-            startOffset
+            startOffset,
+            endOffset
           );
 
           emits("updateData", {
@@ -229,7 +231,7 @@ async function handleKeydown(event) {
             // remove <br>
             if (startOffset === 0) transcripts.pop();
 
-            transcripts.push(removeString(e[1].data, startOffset));
+            transcripts.push(removeString(e[1].data, startOffset, endOffset));
             index = e[0];
           } else {
             if (e[1].data) {
@@ -285,9 +287,9 @@ async function handleCompositionend() {
   sel.removeAllRanges();
 }
 
-function removeString(str, startOffset) {
+function removeString(str, startOffset, endOffset) {
   if (startOffset === 0) return str;
-  return str.slice(0, startOffset - 1) + str.slice(startOffset, str.length);
+  return str.slice(0, startOffset) + str.slice(endOffset, str.length);
 }
 
 function addString(str, startOffset, addText) {
