@@ -287,8 +287,12 @@ async function handleCut() {
     let transcript = "";
     let index = 0;
     if (parent.childNodes.length === 1) {
-      // because is same line and same container, just remove string
-      transcript = removeString(parent.innerHTML, startOffset, endOffset);
+      if (startOffset === 0 && endOffset === startContainer.data.length) {
+        transcript = "&nbsp;";
+      } else {
+        // because is same line and same container, just remove string
+        transcript = removeString(startContainer.data, startOffset, endOffset);
+      }
     } else {
       // this situation is the same container but different line, so have to calculate the length of each node
       // ex: "呵<br>呵呵<br>你好嗎" -> "呵<br><br>你好嗎"
