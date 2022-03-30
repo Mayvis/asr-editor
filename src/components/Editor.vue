@@ -174,23 +174,27 @@ async function handleKeydown(event) {
         sel.addRange(r);
 
         event.preventDefault();
-      }
+      } else {
+        // hack way to remove &nbsp; to itself
+        if (sel.anchorNode.innerHTML === "&nbsp;") {
+          emits("updateData", {
+            segment: +commonAncestorContainer.dataset.segment,
+            transcript: "&nbsp;",
+          });
 
-      // currently have no idea how to handle empty <p> collapse issue
-      if (range.toString() === "") {
-        range.collapse(false);
-
-        event.preventDefault();
+          await nextTick();
+        }
       }
     } else if (nodeName === "#text") {
-      console.log(startOffset);
+      console.log("T");
       const parent = commonAncestorContainer.parentElement;
 
       if (parent.childNodes.length === 1) {
         if (startOffset === 1) {
           emits("updateData", {
             segment: +parent.dataset.segment,
-            transcript: "",
+            transcript:
+              "&nbsp;" + removeString(sel.anchorNode.data, startOffset),
           });
 
           await nextTick();
@@ -299,7 +303,7 @@ function addString(str, startOffset, addText) {
   <div
     ref="editorRef"
     contenteditable="true"
-    style="background-color: #222c31; caret-color: red; white-space: pre"
+    style="background-color: #222c31; caret-color: red"
     outline-none
     p-12px
     text-white
@@ -314,7 +318,6 @@ function addString(str, startOffset, addText) {
       :key="segment"
       :data-segment="segment"
       leading-normal
-      m-0
       inline
       v-html="$sanitize(transcript)"
     />
