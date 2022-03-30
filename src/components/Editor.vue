@@ -169,6 +169,13 @@ async function handleKeydown(event) {
 
         event.preventDefault();
       }
+
+      // currently have no idea how to handle empty <p> collapse issue
+      if (range.toString() === "") {
+        range.collapse(false);
+
+        event.preventDefault();
+      }
     } else if (nodeName === "#text") {
       console.log(startOffset);
       const parent = commonAncestorContainer.parentElement;
