@@ -488,7 +488,6 @@ async function handlePaste() {
       r.setStart(sel.anchorNode.childNodes[index], startOffset + text.length);
     }
   } else if (nodeName === "P") {
-    console.log(sel.anchorNode.childNodes[startOffset]?.nodeName);
     if (sel.anchorNode.childNodes[startOffset]?.nodeName === "BR") {
       const newNode = document.createTextNode(text);
       range.insertNode(newNode);
@@ -508,9 +507,6 @@ async function handlePaste() {
       await nextTick();
 
       r.setStart(sel.anchorNode.childNodes[startOffset], text.length);
-
-      sel.removeAllRanges();
-      sel.addRange(r);
     }
   }
 
