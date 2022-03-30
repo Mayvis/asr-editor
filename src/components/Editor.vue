@@ -525,7 +525,12 @@ async function handleCompositionend() {
 
 function removeString(str, startOffset, endOffset) {
   if (startOffset === 0) return str;
-  return str.slice(0, startOffset) + str.slice(endOffset, str.length);
+
+  if (startOffset === endOffset) {
+    return str.slice(0, startOffset - 1);
+  }
+
+  return str.slice(0, startOffset - 1) + str.slice(endOffset, str.length);
 }
 
 function addString(str, startOffset, addText) {
