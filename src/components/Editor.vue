@@ -288,6 +288,7 @@ async function handleCut() {
     let index = 0;
     if (parent.childNodes.length === 1) {
       if (startOffset === 0 && endOffset === startContainer.data.length) {
+        // remove whole sentence "哈哈囉囉哈" -> "&nbsp;"
         transcript = "&nbsp;";
       } else {
         // because is same line and same container, just remove string
