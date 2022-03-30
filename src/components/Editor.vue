@@ -434,7 +434,30 @@ async function handleCut() {
   }
 }
 
-async function handlePaste() {}
+async function handlePaste() {
+  const sel = document.getSelection();
+  const { startOffset } = sel.getRangeAt(0);
+  const parent = sel.anchorNode.parentElement;
+  const { index } = findNodeIndex(sel, startOffset);
+  const segment = +parent.dataset.segment;
+  const text = await navigator.clipboard.readText();
+
+  const result = addString(sel.anchorNode.textContent, startOffset, text);
+
+  emits("updateData", {
+    segment,
+    transcript: result,
+  });
+
+  await nextTick();
+
+  const r = new Range();
+  r.collapse(false);
+  r.setStart(sel.anchorNode.childNodes[index], startOffset + text.length);
+
+  sel.removeAllRanges();
+  sel.addRange(r);
+}
 
 async function handleCompositionend() {
   const sel = document.getSelection();
