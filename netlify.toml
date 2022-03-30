@@ -1,4 +1,3 @@
-IntelliJ IDEAPhpStormWebStorm
 [build.environment]
   # bypass npm auto install
   NPM_FLAGS = "--version"
