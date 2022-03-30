@@ -404,7 +404,7 @@ async function handleCut() {
       } else if (start !== null) {
         replaceHTML.push({
           segment: ++start,
-          transcript: "",
+          transcript: "&nbsp;",
         });
       }
     }
