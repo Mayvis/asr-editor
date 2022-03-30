@@ -79,6 +79,12 @@ function findNodeIndex(sel, startOffset) {
 
 async function handleKeydown(event) {
   const sel = document.getSelection();
+
+  if (sel.anchorNode === null) {
+    event.preventDefault();
+    return false;
+  }
+
   const range = sel.getRangeAt(0);
 
   key = event.key;
