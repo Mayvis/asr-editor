@@ -270,8 +270,7 @@ async function handleKeydown(event) {
   } else if (key === "Delete") {
     if (event.isComposing) return;
 
-    const { commonAncestorContainer, startOffset, endOffset, startContainer } =
-      range;
+    const { commonAncestorContainer, startOffset, startContainer } = range;
 
     const nodeName = commonAncestorContainer.nodeName;
 
@@ -402,7 +401,7 @@ async function handleKeydown(event) {
 
         await nextTick();
 
-        r.setStart(sel.anchorNode, endOffset);
+        r.setStart(sel.anchorNode.childNodes[0], startOffset);
       }
 
       sel.removeAllRanges();
