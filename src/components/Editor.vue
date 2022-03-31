@@ -273,7 +273,8 @@ async function handleKeydown(event) {
   } else if (key === "Delete") {
     if (event.isComposing) return;
 
-    const { commonAncestorContainer, startOffset, startContainer } = range;
+    const { commonAncestorContainer, startOffset, endOffset, startContainer } =
+      range;
 
     const nodeName = commonAncestorContainer.nodeName;
 
@@ -394,7 +395,8 @@ async function handleKeydown(event) {
       } else {
         const transcript = deleteString(
           commonAncestorContainer.data,
-          startOffset
+          startOffset,
+          endOffset
         );
 
         emits("updateData", {
@@ -668,8 +670,12 @@ async function handleCompositionend() {
   sel.removeAllRanges();
 }
 
-function deleteString(str, startOffset) {
-  return str.slice(0, startOffset) + str.slice(startOffset + 1, str.length);
+function deleteString(str, startOffset, endOffset) {
+  if (startOffset === endOffset) {
+    return str.slice(0, startOffset) + str.slice(startOffset + 1, str.length);
+  } else {
+    return str.slice(0, startOffset) + str.slice(endOffset, str.length);
+  }
 }
 
 function removeString(str, startOffset, endOffset) {
