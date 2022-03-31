@@ -20,6 +20,10 @@ const dummyData = ref([
     segment: 3,
     transcript: "呵呵呵你好嗎",
   },
+  {
+    segment: 4,
+    transcript: "<unk>hello world",
+  },
 ]);
 
 function handleUpdateData({ segment, transcript }) {
