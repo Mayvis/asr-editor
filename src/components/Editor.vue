@@ -186,7 +186,6 @@ async function handleKeydown(event) {
         }
       }
     } else if (nodeName === "#text") {
-      console.log("T");
       const parent = commonAncestorContainer.parentElement;
 
       if (parent.childNodes.length === 1) {
@@ -213,7 +212,11 @@ async function handleKeydown(event) {
 
           await nextTick();
 
-          r.setStart(sel.anchorNode.childNodes[0], startOffset - 1);
+          if (startOffset !== endOffset) {
+            r.setStart(sel.anchorNode.childNodes[0], startOffset);
+          } else {
+            r.setStart(sel.anchorNode.childNodes[0], startOffset - 1);
+          }
 
           sel.removeAllRanges();
           sel.addRange(r);
@@ -673,10 +676,10 @@ function removeString(str, startOffset, endOffset) {
   if (startOffset === 0) return str;
 
   if (startOffset === endOffset) {
-    return str.slice(0, startOffset - 1);
+    return str.slice(0, startOffset - 1) + str.slice(endOffset, str.length);
+  } else {
+    return str.slice(0, startOffset) + str.slice(endOffset, str.length);
   }
-
-  return str.slice(0, startOffset - 1) + str.slice(endOffset, str.length);
 }
 
 function addString(str, startOffset, addText) {
