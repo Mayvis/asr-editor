@@ -27,6 +27,7 @@ const dummyData = ref([
 ]);
 
 function handleUpdateData({ segment, transcript }) {
+  if (isNaN(segment)) return;
   dummyData.value[segment].transcript = transcript;
 }
 
