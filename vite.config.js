@@ -13,4 +13,8 @@ export default defineConfig({
     },
     extensions: [".js", ".vue"],
   },
+  test: {
+    globals: true,
+    environment: "happy-dom",
+  },
 });

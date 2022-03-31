@@ -24,4 +24,12 @@ module.exports = {
     ],
     "vue/no-v-html": "off",
   },
+  overrides: [
+    {
+      files: ["*.spec.js"],
+      rules: {
+        "no-undef": 0,
+      },
+    },
+  ],
 };
