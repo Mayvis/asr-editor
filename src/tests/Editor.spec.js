@@ -5,15 +5,6 @@ import sanitize from "sanitize-html";
 describe("Editor", () => {
   let wrapper;
 
-  window.document["createRange"] = () => ({
-    setStart: () => {},
-    setEnd: () => {},
-    commonAncestorContainer: {
-      nodeName: "BODY",
-      ownerDocument: window.document,
-    },
-  });
-
   beforeEach(() => {
     wrapper = mount(Editor, {
       props: {
