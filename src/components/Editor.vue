@@ -268,6 +268,8 @@ async function handleKeydown(event) {
       }
     }
   } else if (key === "Delete") {
+    if (event.isComposing) return;
+
     const { commonAncestorContainer, startOffset, endOffset, startContainer } =
       range;
 
