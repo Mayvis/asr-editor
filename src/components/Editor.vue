@@ -267,6 +267,147 @@ async function handleKeydown(event) {
         event.preventDefault();
       }
     }
+  } else if (key === "Delete") {
+    const { commonAncestorContainer, startOffset, endOffset, startContainer } =
+      range;
+
+    const nodeName = commonAncestorContainer.nodeName;
+
+    const r = new Range();
+    r.collapse(false);
+
+    if (nodeName === "P") {
+      console.log("P delete");
+
+      let transcripts = [];
+      let length = 0;
+      for (const e of sel.anchorNode.childNodes.entries()) {
+        if (e[0] === startOffset) {
+          if (e[1].nodeName === "BR") {
+            continue;
+          } else {
+            console.log(startOffset, length);
+            transcripts.push({
+              index: e[0],
+              transcript: deleteString(
+                e[1].data,
+                startOffset - length < 0 ? 0 : startOffset - length
+              ),
+            });
+          }
+        } else {
+          if (e[1].data) {
+            length += e[1].data.length;
+
+            transcripts.push({
+              index: e[0],
+              transcript: e[1].data,
+            });
+          } else if (e[1].outerHTML) {
+            transcripts.push({
+              index: e[0],
+              transcript: e[1].outerHTML,
+            });
+          }
+        }
+      }
+
+      emits("updateData", {
+        segment: +sel.anchorNode.dataset.segment,
+        transcript: transcripts.map((e) => e.transcript).join(""),
+      });
+
+      await nextTick();
+
+      if (sel.anchorNode.childNodes[startOffset - 1].nodeName === "BR") {
+        r.setStartAfter(sel.anchorNode.childNodes[startOffset - 1]);
+      }
+
+      sel.removeAllRanges();
+      sel.addRange(r);
+    } else if (nodeName === "#text") {
+      const parent = commonAncestorContainer.parentElement;
+
+      if (parent.childNodes.length > 1) {
+        let flag = false;
+        let index = 0;
+        let transcripts = [];
+        for (const e of parent.childNodes.entries()) {
+          if (e[1] === startContainer) {
+            if (e[1].data.length === startOffset) {
+              flag = true;
+
+              transcripts.push({
+                index: e[0],
+                transcript: e[1].data,
+              });
+
+              continue;
+            } else {
+              index = e[0];
+              transcripts.push({
+                index: e[0],
+                transcript: deleteString(e[1].data, startOffset),
+              });
+            }
+          } else if (!flag) {
+            if (e[1].nodeName === "#text") {
+              transcripts.push({
+                index: e[0],
+                transcript: e[1].data,
+              });
+            } else if (e[1].nodeName === "BR") {
+              transcripts.push({
+                index: e[0],
+                transcript: e[1].outerHTML,
+              });
+            }
+          }
+
+          if (flag) {
+            flag = false;
+
+            if (e[1].nodeName === "BR") {
+              console.log("in");
+              continue;
+            } else {
+              transcripts.push({
+                index: e[0],
+                transcript: deleteString(e[1].data, startOffset),
+              });
+            }
+          }
+        }
+
+        emits("updateData", {
+          segment: +parent.dataset.segment,
+          transcript: transcripts.map((e) => e.transcript).join(""),
+        });
+
+        await nextTick();
+
+        r.setStart(sel.anchorNode.childNodes[index], startOffset);
+      } else {
+        const transcript = deleteString(
+          commonAncestorContainer.data,
+          startOffset
+        );
+
+        emits("updateData", {
+          segment: +parent.dataset.segment,
+          transcript,
+        });
+
+        await nextTick();
+
+        r.setStart(sel.anchorNode, endOffset);
+      }
+
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }
+
+    event.preventDefault();
   }
 }
 
@@ -521,6 +662,10 @@ async function handleCompositionend() {
   await addStringToTextNode(sel, range);
 
   sel.removeAllRanges();
+}
+
+function deleteString(str, startOffset) {
+  return str.slice(0, startOffset) + str.slice(startOffset + 1, str.length);
 }
 
 function removeString(str, startOffset, endOffset) {
