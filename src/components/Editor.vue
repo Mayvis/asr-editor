@@ -52,7 +52,8 @@ async function addStringToTextNode(sel, range) {
 
   const { index } = findNodeIndex(sel, startOffset);
 
-  r.setStart(sel.anchorNode.childNodes[index], startOffset);
+  if (sel.anchorNode.nodeName !== "#text")
+    r.setStart(sel.anchorNode.childNodes[index], startOffset);
 
   sel.removeAllRanges();
   sel.addRange(r);
@@ -120,7 +121,7 @@ async function handleKeydown(event) {
 
       if (sel.anchorNode.childNodes[startOffset - 1].nodeName === "BR") {
         r.setStartAfter(sel.anchorNode.childNodes[startOffset - 1]);
-      } else {
+      } else if (sel.anchorNode.nodeName !== "#text") {
         r.setStart(sel.anchorNode.childNodes[startOffset - 1], 0);
       }
 
@@ -166,7 +167,7 @@ async function handleKeydown(event) {
 
         if (br) {
           r.setStartAfter(sel.anchorNode.childNodes[startOffset - 2]);
-        } else {
+        } else if (sel.anchorNode.nodeName !== "#text") {
           r.setStart(sel.anchorNode.childNodes[startOffset - 2], offset);
         }
 
@@ -213,9 +214,11 @@ async function handleKeydown(event) {
           await nextTick();
 
           if (startOffset !== endOffset) {
-            r.setStart(sel.anchorNode.childNodes[0], startOffset);
+            if (sel.anchorNode.nodeName !== "#text")
+              r.setStart(sel.anchorNode.childNodes[0], startOffset);
           } else {
-            r.setStart(sel.anchorNode.childNodes[0], startOffset - 1);
+            if (sel.anchorNode.nodeName !== "#text")
+              r.setStart(sel.anchorNode.childNodes[0], startOffset - 1);
           }
 
           sel.removeAllRanges();
@@ -261,7 +264,8 @@ async function handleKeydown(event) {
             r.setStart(sel.anchorNode.childNodes[index - 2], length);
           }
         } else {
-          r.setStart(sel.anchorNode.childNodes[index], startOffset - 1);
+          if (sel.anchorNode.nodeName !== "#text")
+            r.setStart(sel.anchorNode.childNodes[index], startOffset - 1);
         }
 
         sel.removeAllRanges();
@@ -391,7 +395,8 @@ async function handleKeydown(event) {
 
         await nextTick();
 
-        r.setStart(sel.anchorNode.childNodes[index], startOffset);
+        if (sel.anchorNode.nodeName !== "#text")
+          r.setStart(sel.anchorNode.childNodes[index], startOffset);
       } else {
         const transcript = deleteString(
           commonAncestorContainer.data,
@@ -406,7 +411,8 @@ async function handleKeydown(event) {
 
         await nextTick();
 
-        r.setStart(sel.anchorNode.childNodes[0], startOffset);
+        if (sel.anchorNode.nodeName !== "#text")
+          r.setStart(sel.anchorNode.childNodes[0], startOffset);
       }
 
       sel.removeAllRanges();
@@ -475,9 +481,11 @@ async function handleCut() {
     r.collapse(false);
 
     if (parent.childNodes.length === 1) {
-      r.setStart(sel.anchorNode.childNodes[0], startOffset);
+      if (sel.anchorNode.nodeName === "#text")
+        r.setStart(sel.anchorNode.childNodes[0], startOffset);
     } else {
-      r.setStart(sel.anchorNode.childNodes[index], startOffset);
+      if (sel.anchorNode.nodeName === "#text")
+        r.setStart(sel.anchorNode.childNodes[index], startOffset);
     }
 
     sel.removeAllRanges();
@@ -521,7 +529,9 @@ async function handleCut() {
 
     const r = new Range();
     r.collapse(false);
-    r.setStart(sel.anchorNode.childNodes[index], startOffset);
+
+    if (sel.anchorNode.nodeName !== "#text")
+      r.setStart(sel.anchorNode.childNodes[index], startOffset);
 
     sel.removeAllRanges();
     sel.addRange(r);
@@ -574,7 +584,12 @@ async function handleCut() {
 
     const r = new Range();
     r.collapse(false);
-    r.setStart(sel.anchorNode.childNodes[0], replaceHTML[0].transcript.length);
+
+    if (sel.anchorNode.nodeName !== "#text")
+      r.setStart(
+        sel.anchorNode.childNodes[0],
+        replaceHTML[0].transcript.length
+      );
 
     sel.removeAllRanges();
     sel.addRange(r);
@@ -608,7 +623,8 @@ async function handlePaste() {
 
       await nextTick();
 
-      r.setStart(sel.anchorNode.childNodes[index], startOffset + text.length);
+      if (sel.anchorNode.nodeName !== "#text")
+        r.setStart(sel.anchorNode.childNodes[index], startOffset + text.length);
     } else {
       let transcripts = "";
       let index = 0;
@@ -632,7 +648,8 @@ async function handlePaste() {
 
       await nextTick();
 
-      r.setStart(sel.anchorNode.childNodes[index], startOffset + text.length);
+      if (sel.anchorNode.nodeName !== "#text")
+        r.setStart(sel.anchorNode.childNodes[index], startOffset + text.length);
     }
   } else if (nodeName === "P") {
     if (sel.anchorNode.childNodes[startOffset]?.nodeName === "BR") {
@@ -653,7 +670,8 @@ async function handlePaste() {
 
       await nextTick();
 
-      r.setStart(sel.anchorNode.childNodes[startOffset], text.length);
+      if (sel.anchorNode.nodeName !== "#text")
+        r.setStart(sel.anchorNode.childNodes[startOffset], text.length);
     }
   }
 
