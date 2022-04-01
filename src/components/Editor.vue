@@ -272,6 +272,8 @@ async function handleKeydown(event) {
 
         event.preventDefault();
       }
+    } else if (nodeName === "DIV") {
+      event.preventDefault();
     }
   } else if (key === "Delete") {
     event.preventDefault();
