@@ -132,7 +132,13 @@ async function handleKeydown(event) {
   } else if (key === "Backspace") {
     if (event.isComposing) return;
 
-    const { commonAncestorContainer, startOffset, endOffset } = range;
+    const {
+      commonAncestorContainer,
+      startOffset,
+      endOffset,
+      startContainer,
+      endContainer,
+    } = range;
 
     const nodeName = commonAncestorContainer.nodeName;
 
@@ -279,6 +285,52 @@ async function handleKeydown(event) {
         event.preventDefault();
       }
     } else if (nodeName === "DIV") {
+      // TODO:: Need to fix select all then delete issue
+      const transcripts = [];
+      let between = false;
+      let startIndex = 0;
+      for (const e of commonAncestorContainer.childNodes.entries()) {
+        if (e[1].nodeName === "P") {
+          let transcript = "";
+          if (e[1].childNodes[0] === startContainer) {
+            startIndex = e[0] - 1;
+            between = true;
+            transcript = e[1].innerHTML.slice(0, startOffset);
+          } else if (e[1].childNodes[0] === endContainer) {
+            between = false;
+            transcript = e[1].innerHTML.slice(endOffset, e[1].innerHTML.length);
+          } else {
+            if (between) {
+              transcript = "&nbsp;";
+            } else {
+              transcript = e[1].innerHTML;
+              console.log("in");
+            }
+          }
+
+          transcripts.push({
+            index: e[0] - 1,
+            transcript,
+          });
+        }
+      }
+
+      console.log(transcripts);
+
+      for (let i = 0; i < transcripts.length; i++) {
+        emits("updateData", {
+          segment: transcripts[i].index,
+          transcript: transcripts[i].transcript,
+        });
+
+        await nextTick();
+      }
+
+      r.setStartAfter(sel.anchorNode.childNodes[startIndex]);
+
+      sel.removeAllRanges();
+      sel.addRange(r);
+
       event.preventDefault();
     }
   } else if (key === "Delete") {
@@ -728,10 +780,6 @@ function checkWhitespace(transcript) {
     transcript === "&nbsp;"
   );
 }
-
-function getParagraphCSS(transcript) {
-  return checkWhitespace(transcript) ? ["hidden"] : "";
-}
 </script>
 
 <template>
@@ -754,7 +802,6 @@ function getParagraphCSS(transcript) {
       :data-segment="segment"
       leading-normal
       inline
-      :class="getParagraphCSS(transcript)"
       v-html="$sanitize(transcript)"
     />
   </div>
