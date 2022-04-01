@@ -105,7 +105,7 @@ async function handleKeydown(event) {
 
       const segment = +sel.anchorNode.dataset.segment;
 
-      // extract value before nextTIck to prevent mutation
+      // extract value before nextTIck to use previous value
       const { startOffset } = range;
 
       emits("updateData", {
