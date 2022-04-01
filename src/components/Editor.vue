@@ -149,7 +149,7 @@ async function handleKeydown(event) {
         let offset = 0;
         let br = false;
         if (
-          commonAncestorContainer.childNodes[startOffset - 2].nodeName ===
+          commonAncestorContainer.childNodes[startOffset - 2]?.nodeName ===
           "#text"
         ) {
           offset = commonAncestorContainer.childNodes[startOffset - 2].length;
