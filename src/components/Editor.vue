@@ -692,21 +692,21 @@ async function handleCompositionend() {
 }
 
 function deleteString(str, startOffset, endOffset) {
-  if (startOffset === endOffset) {
+  if (startOffset === endOffset)
     return str.slice(0, startOffset) + str.slice(startOffset + 1, str.length);
-  } else {
-    return str.slice(0, startOffset) + str.slice(endOffset, str.length);
-  }
+
+  // meaning selection middle text, so just delete it
+  return str.slice(0, startOffset) + str.slice(endOffset, str.length);
 }
 
 function removeString(str, startOffset, endOffset) {
   if (startOffset === 0) return str;
 
-  if (startOffset === endOffset) {
+  if (startOffset === endOffset)
     return str.slice(0, startOffset - 1) + str.slice(endOffset, str.length);
-  } else {
-    return str.slice(0, startOffset) + str.slice(endOffset, str.length);
-  }
+
+  // meaning selection middle text, so just delete it
+  return str.slice(0, startOffset) + str.slice(endOffset, str.length);
 }
 
 function addString(str, startOffset, addText) {
