@@ -190,11 +190,17 @@ async function handleKeydown(event) {
 
       if (parent.childNodes.length === 1) {
         if (startOffset === 1) {
+          let transcript = removeString(
+            sel.anchorNode.data,
+            startOffset,
+            endOffset
+          );
+
+          if (transcript.length === 0) transcript = "&nbsp;";
+
           emits("updateData", {
             segment: +parent.dataset.segment,
-            transcript:
-              "&nbsp;" +
-              removeString(sel.anchorNode.data, startOffset, endOffset),
+            transcript,
           });
 
           await nextTick();
@@ -714,6 +720,18 @@ function addString(str, startOffset, addText) {
     str.substring(startOffset, str.length)
   );
 }
+
+function checkWhitespace(transcript) {
+  return (
+    String.fromCharCode(160) === transcript ||
+    String.fromCharCode(32) === transcript ||
+    transcript === "&nbsp;"
+  );
+}
+
+function getParagraphCSS(transcript) {
+  return checkWhitespace(transcript) ? ["hidden"] : "";
+}
 </script>
 
 <template>
@@ -736,6 +754,7 @@ function addString(str, startOffset, addText) {
       :data-segment="segment"
       leading-normal
       inline
+      :class="getParagraphCSS(transcript)"
       v-html="$sanitize(transcript)"
     />
   </div>
