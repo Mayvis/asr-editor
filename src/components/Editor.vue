@@ -276,8 +276,6 @@ async function handleKeydown(event) {
       event.preventDefault();
     }
   } else if (key === "Delete") {
-    event.preventDefault();
-
     if (event.isComposing) return;
 
     const { commonAncestorContainer, startOffset, endOffset, startContainer } =
