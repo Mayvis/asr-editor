@@ -259,7 +259,7 @@ async function handleKeydown(event) {
         if (startOffset === 0) {
           if (sel.anchorNode.childNodes[index - 2].nodeName === "BR") {
             r.setStartAfter(sel.anchorNode.childNodes[index - 2]);
-          } else {
+          } else if (sel.anchorNode.nodeName !== "#text") {
             r.setStart(sel.anchorNode.childNodes[index - 2], length);
           }
         } else {
