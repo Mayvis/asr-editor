@@ -248,7 +248,7 @@ async function handleKeydown(event) {
           }
         }
 
-        let length = transcripts[index - 2].length;
+        let length = transcripts[index - 2]?.length;
 
         emits("updateData", {
           segment: +parent.dataset.segment,
@@ -261,7 +261,10 @@ async function handleKeydown(event) {
           if (sel.anchorNode.childNodes[index - 2].nodeName === "BR") {
             r.setStartAfter(sel.anchorNode.childNodes[index - 2]);
           } else if (sel.anchorNode.nodeName !== "#text") {
-            r.setStart(sel.anchorNode.childNodes[index - 2], length);
+            r.setStart(
+              sel.anchorNode.childNodes[index - 2],
+              length ? length : 0
+            );
           }
         } else {
           if (sel.anchorNode.nodeName !== "#text")
