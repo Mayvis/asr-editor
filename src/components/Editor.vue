@@ -596,11 +596,17 @@ async function handleRemove() {
     const r = new Range();
     r.collapse(false);
 
-    if (sel.anchorNode.nodeName !== "#text")
-      r.setStart(
-        sel.anchorNode.childNodes[0],
-        replaceHTML[0].transcript.length
-      );
+    if (sel.anchorNode.nodeName !== "#text") {
+      // <p></p> <== no data childNode[0] will be undefined
+      if (sel.anchorNode.childNodes[0]) {
+        r.setStart(
+          sel.anchorNode.childNodes[0],
+          replaceHTML[0].transcript.length
+        );
+      } else {
+        r.setStartAfter(sel.anchorNode);
+      }
+    }
 
     addRange(r);
   }
