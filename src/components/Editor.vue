@@ -279,7 +279,7 @@ async function handleKeydown(event) {
         event.preventDefault();
       }
     } else if (nodeName === "DIV") {
-      handleCut();
+      handleRemove();
 
       event.preventDefault();
     }
@@ -430,10 +430,7 @@ async function handleKeydown(event) {
   }
 }
 
-async function handleCut() {
-  // using copy instead cut to mimic cutting behavior
-  document.execCommand("copy");
-
+async function handleRemove() {
   const sel = document.getSelection();
   const range = sel.getRangeAt(0);
 
@@ -607,6 +604,13 @@ async function handleCut() {
 
     addRange(r);
   }
+}
+
+async function handleCut() {
+  // using copy instead cut to mimic cutting behavior
+  document.execCommand("copy");
+
+  handleRemove();
 }
 
 async function handlePaste() {
