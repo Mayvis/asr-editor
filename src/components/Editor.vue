@@ -587,7 +587,7 @@ async function handleRemove() {
 
       emits("updateData", {
         segment,
-        transcript,
+        transcript: transcript.length === 0 ? "&nbsp;" : transcript,
       });
 
       await nextTick();
