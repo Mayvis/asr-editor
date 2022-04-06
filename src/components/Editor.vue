@@ -129,13 +129,7 @@ async function handleKeydown(event) {
   } else if (key === "Backspace") {
     if (event.isComposing) return;
 
-    const {
-      commonAncestorContainer,
-      startOffset,
-      endOffset,
-      startContainer,
-      endContainer,
-    } = range;
+    const { commonAncestorContainer, startOffset, endOffset } = range;
 
     const nodeName = commonAncestorContainer.nodeName;
 
