@@ -735,14 +735,6 @@ function addRange(range) {
   sel.removeAllRanges();
   sel.addRange(range);
 }
-
-function checkWhitespace(transcript) {
-  return (
-    String.fromCharCode(160) === transcript ||
-    String.fromCharCode(32) === transcript ||
-    transcript === "&nbsp;"
-  );
-}
 </script>
 
 <template>
