@@ -55,8 +55,7 @@ async function addStringToTextNode(sel, range) {
   if (sel.anchorNode.nodeName !== "#text")
     r.setStart(sel.anchorNode.childNodes[index], startOffset);
 
-  sel.removeAllRanges();
-  sel.addRange(r);
+  addRange(r);
 }
 
 function findNodeIndex(sel, startOffset) {
@@ -100,8 +99,7 @@ async function handleKeydown(event) {
       range.setStartAfter(br);
       range.collapse(false);
 
-      sel.removeAllRanges();
-      sel.addRange(range);
+      addRange(range);
 
       const segment = +sel.anchorNode.dataset.segment;
 
@@ -124,8 +122,7 @@ async function handleKeydown(event) {
         r.setStart(sel.anchorNode.childNodes[startOffset - 1], 0);
       }
 
-      sel.removeAllRanges();
-      sel.addRange(r);
+      addRange(r);
 
       event.preventDefault();
     }
@@ -176,8 +173,7 @@ async function handleKeydown(event) {
           r.setStart(sel.anchorNode.childNodes[startOffset - 2], offset);
         }
 
-        sel.removeAllRanges();
-        sel.addRange(r);
+        addRange(r);
 
         event.preventDefault();
       } else {
@@ -232,8 +228,7 @@ async function handleKeydown(event) {
               r.setStart(sel.anchorNode.childNodes[0], startOffset - 1);
           }
 
-          sel.removeAllRanges();
-          sel.addRange(r);
+          addRange(r);
         }
 
         event.preventDefault();
@@ -279,8 +274,7 @@ async function handleKeydown(event) {
             r.setStart(sel.anchorNode.childNodes[index], startOffset - 1);
         }
 
-        sel.removeAllRanges();
-        sel.addRange(r);
+        addRange(r);
 
         event.preventDefault();
       }
@@ -347,8 +341,7 @@ async function handleKeydown(event) {
         r.setStartAfter(sel.anchorNode.childNodes[startOffset - 1]);
       }
 
-      sel.removeAllRanges();
-      sel.addRange(r);
+      addRange(r);
     } else if (nodeName === "#text") {
       const parent = commonAncestorContainer.parentElement;
 
@@ -430,8 +423,7 @@ async function handleKeydown(event) {
           r.setStart(sel.anchorNode.childNodes[0], startOffset);
       }
 
-      sel.removeAllRanges();
-      sel.addRange(r);
+      addRange(r);
     }
 
     event.preventDefault();
@@ -512,8 +504,7 @@ async function handleCut() {
         r.setStart(sel.anchorNode.childNodes[index], startOffset);
     }
 
-    sel.removeAllRanges();
-    sel.addRange(r);
+    addRange(r);
   } else if (
     range.startContainer.parentElement === range.endContainer.parentElement
   ) {
@@ -557,8 +548,7 @@ async function handleCut() {
     if (sel.anchorNode.nodeName !== "#text")
       r.setStart(sel.anchorNode.childNodes[index], startOffset);
 
-    sel.removeAllRanges();
-    sel.addRange(r);
+    addRange(r);
   } else {
     const replaceHTML = [];
     let start = null;
@@ -615,8 +605,7 @@ async function handleCut() {
         replaceHTML[0].transcript.length
       );
 
-    sel.removeAllRanges();
-    sel.addRange(r);
+    addRange(r);
   }
 }
 
@@ -682,8 +671,7 @@ async function handlePaste() {
       range.setStartAfter(newNode);
       range.collapse(false);
 
-      sel.removeAllRanges();
-      sel.addRange(range);
+      addRange(range);
 
       const segment = +sel.anchorNode.dataset.segment;
 
@@ -699,8 +687,7 @@ async function handlePaste() {
     }
   }
 
-  sel.removeAllRanges();
-  sel.addRange(r);
+  addRange(r);
 }
 
 async function handleCompositionend() {
@@ -736,6 +723,13 @@ function addString(str, startOffset, addText) {
     addText +
     str.substring(startOffset, str.length)
   );
+}
+
+function addRange(range) {
+  const sel = document.getSelection();
+
+  sel.removeAllRanges();
+  sel.addRange(range);
 }
 
 function checkWhitespace(transcript) {
