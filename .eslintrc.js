@@ -34,7 +34,7 @@ module.exports = {
     {
       files: ["*.spec.js"],
       rules: {
-        "no-undef": 0,
+        "no-undef": "off",
       },
     },
   ],
