@@ -18,7 +18,7 @@ defineProps({
 const emits = defineEmits(["updateData"]);
 
 async function handleInput(event) {
-  const sel = document.getSelection();
+  const sel = window.getSelection();
   const range = sel.getRangeAt(0);
 
   if (key === "Enter") {
@@ -78,7 +78,7 @@ function findNodeIndex(sel, startOffset) {
 }
 
 async function handleKeydown(event) {
-  const sel = document.getSelection();
+  const sel = window.getSelection();
 
   if (sel.rangeCount === 0) {
     return;
@@ -428,7 +428,7 @@ async function handleKeydown(event) {
 }
 
 async function handleRemove() {
-  const sel = document.getSelection();
+  const sel = window.getSelection();
   const range = sel.getRangeAt(0);
 
   if (range.startContainer === range.endContainer) {
@@ -617,7 +617,7 @@ async function handleCut() {
 }
 
 async function handlePaste() {
-  const sel = document.getSelection();
+  const sel = window.getSelection();
   const range = sel.getRangeAt(0);
   const { startOffset, startContainer } = range;
   const text = await navigator.clipboard.readText();
@@ -698,7 +698,7 @@ async function handlePaste() {
 }
 
 async function handleCompositionend() {
-  const sel = document.getSelection();
+  const sel = window.getSelection();
   const range = sel.getRangeAt(0);
 
   await addStringToTextNode(sel, range);
@@ -733,7 +733,7 @@ function addString(str, startOffset, addText) {
 }
 
 function addRange(range) {
-  const sel = document.getSelection();
+  const sel = window.getSelection();
 
   sel.removeAllRanges();
   sel.addRange(range);
